@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>First page</title>
+<script src="webrtc/samples/web/js/adapter.js"></script>
+</head>
+<body>
+<div id="mainDiv">
+  <h1><code>getUserMedia()</code></h1>
+  <video autoplay></video>
+  <script>
+var constraints = {audio: false, video: true};
+var video = document.querySelector('video');
+var successCallback = function(stream) {
+  window.stream = stream;
+  attachMediaStream(video, stream);
+  video.play();
+}
+
+var errorCallback = function(err) {
+  console.log('getUserMedia error: ', err);
+}
+
+getUserMedia(constraints, successCallback, errorCallback);
+  </script>
+</div>
+</body>
+</html>
