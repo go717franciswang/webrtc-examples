@@ -45,18 +45,22 @@ var remoteVideo = document.getElementById("remoteVideo");
 var startButton = document.getElementById("startButton");
 var callButton = document.getElementById("callButton");
 var hangupButton = document.getElementById("hangupButton");
+
 // Just allow the user to click on the Call button at start-up
 startButton.disabled = false;
 callButton.disabled = true;
 hangupButton.disabled = true;
+
 // Associate JavaScript handlers with click events on the buttons
 startButton.onclick = start;
 callButton.onclick = call;
 hangupButton.onclick = hangup;
+
 // Utility function for logging information to the JavaScript console
 function log(text) {
   console.log("At time: " + (performance.now() / 1000).toFixed(3) + " --> " + text);
 }
+
 // Callback in case of success of the getUserMedia() call
 function successCallback(stream){
   log("Received local stream");
@@ -70,6 +74,7 @@ function successCallback(stream){
   // We can now enable the Call button
   callButton.disabled = false;
 }
+
 // Function associated with clicking on the Start button
 // This is the event triggering all other actions
 function start() {
@@ -85,6 +90,7 @@ function start() {
                            log("navigator.getUserMedia error: ", error);
                          });
 }
+
 // Function associated with clicking on the Call button
 // This is enabled upon successful completion of the Start button handler
 function call() {
@@ -139,9 +145,11 @@ function call() {
   // as the local SDP is ready.
   localPeerConnection.createOffer(gotLocalDescription, onSignalingError);
 }
+
 function onSignalingError(error){
   console.log('Failed to create signaling message : ' + error.name);
 }
+
 // Handler to be called when the 'local' SDP becomes available
 function gotLocalDescription(description){
   // Add the local description to the local PeerConnection
@@ -155,6 +163,7 @@ function gotLocalDescription(description){
   // Create the Answer to the received Offer based on the 'local' description
   remotePeerConnection.createAnswer(gotRemoteDescription, onSignalingError);
 }
+
 // Handler to be called when the remote SDP becomes available
 function gotRemoteDescription(description){
   // Set the remote description as the local description of the
@@ -165,6 +174,7 @@ function gotRemoteDescription(description){
   // local PeerConnection
   localPeerConnection.setRemoteDescription(description);
 }
+
 // Handler to be called when hanging up the call
 function hangup() {
   log("Ending call");
@@ -179,6 +189,7 @@ function hangup() {
   // Enable Call button to allow for new calls to be established
   callButton.disabled = false;
 }
+
 // Handler to be called as soon as the remote stream becomes available
 function gotRemoteStream(event){
   // Associate the remote video element with the retrieved stream
@@ -191,6 +202,7 @@ function gotRemoteStream(event){
   }
   log("Received remote stream");
 }
+
 // Handler to be called whenever a new local ICE candidate becomes available
 function gotLocalIceCandidate(event){
   if (event.candidate) {
@@ -199,6 +211,7 @@ function gotLocalIceCandidate(event){
     log("Local ICE candidate: \n" + event.candidate.candidate);
   }
 }
+
 // Handler to be called whenever a new remote ICE candidate becomes available
 function gotRemoteIceCandidate(event){
   if (event.candidate) {
