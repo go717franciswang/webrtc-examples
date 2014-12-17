@@ -38,6 +38,12 @@
 </div>
 
 <script>
+$('textarea').css({width: 600});
+
+var adj_height = function(textarea) {
+  textarea.css({height: textarea[0].scrollHeight});
+}
+
 var show_caller = function() {
   $('#caller').show();
   $('#question').hide();
@@ -69,24 +75,29 @@ var data_channel;
 
 var create_offer = function() {
   var candidates = [];
+  var offer;
   data_channel = pc.createDataChannel("msg_channel", {reliable: true});
   handle_data_channel(data_channel);
 
   pc.onicecandidate = function(e) {
     if (e.candidate) {
       candidates.push(e.candidate);
+      display_offer();
     }
   };
 
-  pc.createOffer(function(offer) {
+  pc.createOffer(function(o) {
+    offer = o;
+    display_offer();
     pc.setLocalDescription(offer);
-    setTimeout(function() {
-      // give it a some time to gather ICE candidates
-      $('#offer').val(JSON.stringify({offer: offer, candidates: candidates}));
-      $('#offer_widget').show();
-      $('#accept_answer').show();
-    }, 500);
   }, on_signaling_error, sdp_constraints);
+
+  var display_offer = function() {
+    $('#offer').val(JSON.stringify({offer: offer, candidates: candidates}));
+    adj_height($('#offer'));
+    $('#offer_widget').show();
+    $('#accept_answer').show();
+  };
 }
 
 var handle_data_channel = function(c) {
@@ -115,6 +126,7 @@ var create_answer = function() {
   var offer = new RTCSessionDescription(info.offer);
   var candidates = [];
   var remote_candidates = info.candidates;
+  var answer;
 
   pc.setRemoteDescription(offer);
   $.each(remote_candidates, function(i, c) {
@@ -122,24 +134,28 @@ var create_answer = function() {
     pc.addIceCandidate(candidate);
   });
 
-  pc.createAnswer(function(answer) {
+  pc.createAnswer(function(a) {
+    answer = a;
     pc.setLocalDescription(answer);
-    setTimeout(function() {
-      // give it a some time to gather ICE candidates
-      $('#answer').val(JSON.stringify({answer: answer, candidates: candidates}));
-      $('#answer_widget').show();
-    }, 500);
+    display_answer();
   }, on_signaling_error, sdp_constraints);
 
   pc.onicecandidate = function(e) {
     if (e.candidate) {
       candidates.push(e.candidate);
+      display_answer();
     }
   };
 
   pc.ondatachannel = function(e) {
     data_channel = e.channel;
     handle_data_channel(data_channel);
+  };
+
+  var display_answer = function() {
+    $('#answer').val(JSON.stringify({answer: answer, candidates: candidates}));
+    adj_height($('#answer'));
+    $('#answer_widget').show();
   };
 }
 
