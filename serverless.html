@@ -39,6 +39,18 @@
 
 <script>
 $('textarea').css({width: 600});
+var is_page_active = true;
+var unread_msg_interval;
+$(window).focus(function() {
+  is_page_active = true;
+
+  clearInterval(unread_msg_interval);
+  unread_msg_interval = 0;
+  document.title = 'Serverless Demo';
+});
+$(window).blur(function() {
+  is_page_active = false;
+});
 
 var adj_height = function(textarea) {
   textarea.css({height: textarea[0].scrollHeight});
@@ -109,10 +121,18 @@ var handle_data_channel = function(c) {
 
   c.onmessage = function(e) {
     add_msg(e.data, {color: 'red'});
+    var dots = 1;
+    if (!is_page_active && !unread_msg_interval) {
+      unread_msg_interval = setInterval(function() {
+        document.title = '.'.repeat(dots);
+        dots = dots % 5 + 1;
+      }, 300);
+    }
   };
 
   c.onclose = function() {
     $('#input')[0].disabled = true;
+    add_msg('peer has left the conversation', {color: 'green'});
     $('#msg').hide();
   };
 };
