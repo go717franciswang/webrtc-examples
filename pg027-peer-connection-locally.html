@@ -65,11 +65,13 @@ function log(text) {
 function successCallback(stream){
   log("Received local stream");
   // Associate the local video element with the retrieved stream
+  /*
   if (window.URL) {
     localVideo.src = URL.createObjectURL(stream);
   } else {
     localVideo.src = stream;
   }
+  */
   localStream = stream;
   // We can now enable the Call button
   callButton.disabled = false;
