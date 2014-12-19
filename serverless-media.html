@@ -33,7 +33,10 @@
 
 <div id="output"></div>
 <div id="msg" style="display:none">
-  <video autobplay></video><input type="checkbox" onclick="enable_audio()"/>Enable Audio<br>
+  <audio autoplay></audio>
+  <button id="enable_audio" onclick="enable_audio()"/>Enable Audio</button>
+  <button id="disable_audio" onclick="disable_audio()" style="display:none" />Disable Audio</button>
+  <br>
   <textarea id="input" disabled></textarea><br>
   <button onclick="send()">Send</button>
 </div>
@@ -43,6 +46,8 @@ $('textarea').css({width: 600});
 var is_page_active = true;
 var unread_msg_interval;
 var renegotiating = false;
+var audio_stream;
+var is_caller;
 $(window).focus(function() {
   is_page_active = true;
 
@@ -59,11 +64,13 @@ var adj_height = function(textarea) {
 }
 
 var show_caller = function() {
+  is_caller = true;
   $('#caller').show();
   $('#question').hide();
 };
 
 var show_callee = function() {
+  is_caller = false;
   $('#callee').show();
   $('#question').hide();
 }
@@ -87,8 +94,11 @@ var sdp_constraints = {};
 var pc = new RTCPeerConnection(pc_config, pc_constraints);
 pc.onaddstream = function(e) {
   console.log('got stream');
-  attachMediaStream($('video')[0], e.stream);
+  attachMediaStream($('audio')[0], e.stream);
   add_msg('Peer is now streaming media feed', {color: 'green'});
+};
+pc.onremovestream = function(e) {
+  add_msg('Peer is no longer streaming media feed', {color: 'green'});
 };
 var data_channel;
 
@@ -152,6 +162,8 @@ var handle_data_channel = function(c) {
       console.log('got new answer');
       var answer = new RTCSessionDescription(msg.content);
       pc.setRemoteDescription(answer);
+    } else if (msg.type == 'renegotiate') {
+      renegotiate();
     }
   };
 
@@ -226,24 +238,49 @@ var send = function() {
 };
 
 var enable_audio = function() {
-  var constraints = { audio: true, video: true };
-  var video = $('video')[0];
+  var constraints = { audio: true, video: false };
+  var audio = $('audio')[0];
   var error_callback = function(e) {
     console.warn('getUserMedia error: '+ e);
   };
 
   var success_callback = function(stream) {
+    audio_stream = stream;
     pc.addStream(stream);
-    // need to renegotiate
-    renegotiating = true;
-    pc.createOffer(function(offer) {
-      pc.setLocalDescription(offer);
-      console.log('sending new offer..');
-      data_channel.send(JSON.stringify({type: 'offer', content: offer}));
-    }, on_signaling_error, sdp_constraints);
+    if (is_caller) {
+      renegotiate();
+    } else {
+      data_channel.send(JSON.stringify({type: 'renegotiate'}));
+    }
+    
+    $('#enable_audio').hide();
+    $('#disable_audio').show();
   };
 
   getUserMedia(constraints, success_callback, error_callback);
+};
+
+var disable_audio = function() {
+  pc.removeStream(audio_stream);
+  if (is_caller) {
+    renegotiate();
+  } else {
+    data_channel.send(JSON.stringify({type: 'renegotiate'}));
+  }
+
+  audio_stream.stop();
+  $('#enable_audio').show();
+  $('#disable_audio').hide();
+};
+
+var renegotiate = function() {
+  console.log('renegotiating..');
+  renegotiating = true;
+  pc.createOffer(function(offer) {
+    pc.setLocalDescription(offer);
+    console.log('sending new offer..');
+    data_channel.send(JSON.stringify({type: 'offer', content: offer}));
+  }, on_signaling_error, sdp_constraints);
 };
 </script>
 </body>
