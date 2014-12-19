@@ -163,7 +163,7 @@ var handle_data_channel = function(c) {
       var answer = new RTCSessionDescription(msg.content);
       pc.setRemoteDescription(answer);
     } else if (msg.type == 'renegotiate') {
-      renegotiate();
+      renegotiate(msg.content);
     }
   };
 
@@ -250,7 +250,8 @@ var enable_audio = function() {
     if (is_caller) {
       renegotiate();
     } else {
-      data_channel.send(JSON.stringify({type: 'renegotiate'}));
+      // when callee wants to add a stream, it needs to make sure caller is ready for it
+      data_channel.send(JSON.stringify({type: 'renegotiate', content: {mandatory: {OfferToReceiveAudio: true}} }));
     }
     
     $('#enable_audio').hide();
@@ -273,14 +274,15 @@ var disable_audio = function() {
   $('#disable_audio').hide();
 };
 
-var renegotiate = function() {
+var renegotiate = function(custom_sdp_constraints) {
   console.log('renegotiating..');
   renegotiating = true;
+  var constraints = custom_sdp_constraints || sdp_constraints;
   pc.createOffer(function(offer) {
     pc.setLocalDescription(offer);
     console.log('sending new offer..');
     data_channel.send(JSON.stringify({type: 'offer', content: offer}));
-  }, on_signaling_error, sdp_constraints);
+  }, on_signaling_error, constraints);
 };
 </script>
 </body>
